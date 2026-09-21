@@ -13,6 +13,24 @@ from v4.workspace import Workspace, git
 
 
 class ReliableTest(unittest.TestCase):
+    def test_denied_command_never_executes(self):
+        class Script:
+            def complete(self, messages, tools, emit):
+                if messages[-1].type == "tool":
+                    return AIMessage(content="Denied, stopping")
+                return AIMessage(content="", tool_calls=[{"name": "run_command", "id": "denied",
+                    "args": {"argv": ["python3", "-c", "open('marker','w').write('x')"]}}])
+        with tempfile.TemporaryDirectory() as folder:
+            fixture(folder)
+            with SqliteSaver.from_conn_string(":memory:") as saver:
+                graph = Runtime(Script(), Tools(folder, memory=False), lambda e: None, False).build(saver)
+                opts = {"configurable": {"thread_id": "deny"}}
+                result = graph.invoke(initial("deny", folder, ["true"], verification=False), opts)
+                self.assertTrue(result.get("__interrupt__"))
+                result = graph.invoke(Command(resume=False), opts)
+                self.assertEqual(result["status"], "answered")
+                self.assertFalse(Path(folder, "marker").exists())
+
     def test_repair_approval_and_isolation(self):
         class Script:
             def __init__(self):

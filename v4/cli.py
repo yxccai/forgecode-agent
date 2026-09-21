@@ -25,6 +25,7 @@ def main():
     parser.add_argument("--repo", default=".")
     parser.add_argument("--thread")
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--windows-env", action="store_true", help="Import Windows FORGECODE variables through WSL")
     parser.add_argument("--verify", help="Trusted verification command, e.g. 'python3 -m unittest discover'")
     parser.add_argument("--no-planning", action="store_true")
     parser.add_argument("--no-repo-context", action="store_true")
@@ -44,6 +45,9 @@ def main():
         parser.error("Invalid budget")
     ui = Terminal()
     try:
+        if args.windows_env:
+            from forgecode.windows import windows_environment
+            windows_environment()
         cfg = Config.load(args.config, base_url=args.base_url, model=args.model,
                           reasoning_effort=args.reasoning_effort, max_steps=args.max_steps)
         thread = args.thread or uuid4().hex[:12]

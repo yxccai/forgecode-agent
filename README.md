@@ -1,14 +1,16 @@
 # ForgeCode Agent
 
 用于学习 Agent 原理与面试演示的终端 Coding Agent。按 `PROJECT_PLAN.md` 逐版开发，源码保留在 `v0/` 到 `v5/`。
+学习路线见 [docs/learning.md](docs/learning.md)，协议/工具/状态与终端渲染分开实现。
 
-当前开发到 **V4**；每版的验证记录见 `docs/vN.md`。
+当前开发到 **V5 / v1.0**；每版的验证记录见 `docs/vN.md`，评测结果见 `docs/evaluation-v5.md`。
 
 ## 安装与运行
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
+pip install -r requirements.lock
 pip install -e .
 export OPENAI_BASE_URL=https://your-provider.example/v1
 export OPENAI_API_KEY=your-key
@@ -22,6 +24,8 @@ forgecode --repo /path/to/clean/repo --verify 'python3 -m unittest discover' '�
 也可用 `forgecode configure path/to/config.local.json` 维护不同配置文件。
 支持 `FORGECODE_BASE_URL`、`FORGECODE_API_KEY`、`FORGECODE_MODEL`、`FORGECODE_REASONING_EFFORT`，
 同名配置优先于 `OPENAI_*` 环境变量。
+变量配置在 Windows 而程序运行于 WSL 时，最新 CLI 可添加 `--windows-env` 读取；
+这只是可选桥接，独立第三方配置仍可使用 `forgecode configure` 和 `--config`。
 推理强度原样传给接口，例如 `low`、`medium`、`high`，具体支持值取决于提供商。
 不设置则不发送该字段。Key 使用环境变量或被 Git 忽略的本地 JSON 配置，避免写入命令历史。
 `--config config.local.json` 可读取 `base_url`、`api_key`、`model`、`reasoning_effort`。
@@ -45,7 +49,9 @@ forgecode --repo /path/to/clean/repo --verify 'python3 -m unittest discover' '�
 
 8. `v4/agent.py`、`v4/workspace.py`：审批中断、验证修复循环和 worktree 隔离。
 
-最新 `forgecode` 入口运行 V4；此前版本可用 `python -m v0.cli` 到 `python -m v3.cli`。
+9. `v5/tasks.py`、`v5/oracle.py`、`v5/evaluate.py`：独立验收与配对消融实验。
+
+最新 `forgecode` 入口运行 V5（运行时复用 V4）；此前版本可用 `python -m v0.cli` 到 `python -m v4.cli`。
 V4 要求干净 Git 仓库与明确的 `--verify` 命令，修改留在独立 worktree 中，详见 `docs/v4.md`。
 V1-V3 会直接修改 `--repo` 指定目录，运行命令前逐次询问确认。
 V2/V3 可用 `--thread demo --pause-after-tool` 在工具后暂停，再用 `--thread demo --resume` 恢复。
@@ -58,3 +64,10 @@ python -m unittest discover -s tests -v
 
 测试启动本地 HTTP SSE 服务并实际读取临时仓库，覆盖工具调用参数分片、工具结果回传、流式正文、路径越界和步数预算。
 该测试验证运行机制，**不代表真实模型任务成功率**。真实提供商验证和后续版本进展记录在 `docs/`。
+
+```bash
+forgecode-eval --suite matrix --config config.local.json --out .forgecode/evaluation
+python -m v5.report .forgecode/evaluation
+```
+
+评测会消耗模型 API token。任务与方法限制见 `docs/v5.md`，不要将小型教学任务成功率当作生产能力承诺。

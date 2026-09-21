@@ -1,40 +1,17 @@
 """Run a real V0 task; optionally import Windows user environment into this process."""
 import argparse
 import json
-import os
 from pathlib import Path
-import subprocess
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from forgecode.config import Config
 from forgecode.trace import Trace
+from forgecode.windows import windows_environment
 from v0.agent import run
 from v0.model import Model
 from v0.tools import Tools
-
-
-def windows_environment():
-    # Capture secrets directly; never print the PowerShell output.
-    script = """
-    $result = @{}
-    foreach ($name in @('FORGECODE_API_KEY', 'FORGECODE_BASE_URL', 'FORGECODE_MODEL')) {
-        $value = [Environment]::GetEnvironmentVariable($name, 'User')
-        if (-not $value) { $value = [Environment]::GetEnvironmentVariable($name, 'Machine') }
-        if (-not $value) { $value = [Environment]::GetEnvironmentVariable($name, 'Process') }
-        $result[$name] = $value
-    }
-    $result | ConvertTo-Json -Compress
-    """
-    result = subprocess.run(["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", script],
-                            capture_output=True, check=True, timeout=30)
-    values = json.loads(result.stdout.decode("utf-8-sig"))
-    for key, value in values.items():
-        if value:
-            os.environ[key] = value
-    if not all(values.values()):
-        raise RuntimeError("Missing Windows FORGECODE variables")
 
 
 def main():
