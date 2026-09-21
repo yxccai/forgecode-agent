@@ -33,6 +33,7 @@ class Repository:
             yield from self.guard.files()
 
     def index(self):
+        # 本地扫描不等于把全文发送给模型；该实现尚未缓存或增量更新索引。
         records = []
         for path in self.paths():
             if len(records) >= 5000:
@@ -58,6 +59,7 @@ class Repository:
         return records
 
     def select(self, task, budget=8000):
+        # 权重是人工启发式：优先路径/符号命中，再看正文词；效果需要实验验证。
         query = terms(task)
         records = self.index()
         def score(record):
@@ -68,6 +70,7 @@ class Repository:
         selected, used = [], 0
         for record in ranked[:8]:
             clean = {key: value for key, value in record.items() if key != "terms"}
+            # 只返回大纲，去掉源码词集合；真正源码仍由模型调用 read_file 获取。
             clean["score"] = score(record)
             if not clean["score"]:
                 continue

@@ -15,6 +15,7 @@ class Config:
 
     @classmethod
     def load(cls, path=None, **overrides):
+        # 通用入口：显式 overrides > 环境 > JSON；交互入口会把选定 JSON 再作为 overrides。
         values = json.loads(Path(path).read_text()) if path else {}
         for key, suffix in (("base_url", "BASE_URL"), ("api_key", "API_KEY"),
                             ("model", "MODEL"), ("reasoning_effort", "REASONING_EFFORT")):

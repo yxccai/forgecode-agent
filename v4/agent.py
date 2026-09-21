@@ -31,6 +31,7 @@ class Runtime(RepositoryRuntime):
             return {"status": "budget_exhausted"}
         call = state["pending"][state["cursor"]]
         if call["name"] == "run_command":
+            # 恢复可能重新进入本节点；危险副作用必须位于 interrupt 之后。
             decision = interrupt({"kind": "command", "argv": call["args"].get("argv"),
                                   "cwd": str(self.tools.root), "tool_call_id": call["id"]})
             self.emit({"type": "approval", "approved": decision is True, "call_id": call["id"]})
@@ -40,6 +41,7 @@ class Runtime(RepositoryRuntime):
                 return {"messages": [ToolMessage(content=output, tool_call_id=call["id"])],
                         "calls": state["calls"] + 1, "cursor": state["cursor"] + 1}
             old = self.tools.approve
+            # 本次批准只放行当前 argv，并在 finally 恢复策略，避免授权扩大到后续命令。
             self.tools.approve = lambda argv: argv == call["args"].get("argv")
             try:
                 return super().tools_node(state)
@@ -55,6 +57,7 @@ class Runtime(RepositoryRuntime):
         return {"baseline": result, "messages": [HumanMessage("Baseline verification:\n" + json.dumps(result))]}
 
     def route_act(self, state):
+        # 模型的“回答结束”只触发验证；verified 必须由运行时的实际命令结果授予。
         if state["status"] == "running":
             return "tools"
         if state["status"] == "answered" and state["verification_enabled"]:
@@ -69,6 +72,7 @@ class Runtime(RepositoryRuntime):
         if state["repairs"] >= state["max_repairs"] or self.budget(state):
             return {"verification": result, "status": "verification_failed"}
         return {"verification": result, "status": "running", "repairs": state["repairs"] + 1,
+                # 失败输出进入消息历史，让下一次 Act 基于环境证据修复。
                 "messages": [HumanMessage("Verification failed. Analyze the evidence, repair the code, "
                                           "and finish for another verification.\n" + json.dumps(result))]}
 

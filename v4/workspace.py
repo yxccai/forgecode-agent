@@ -25,6 +25,7 @@ class Workspace:
         self.manifest = self.data / "tasks" / f"{thread}.json"
 
     def create(self, verify):
+        # worktree 从 HEAD 创建；拒绝脏目录可避免用户未提交的源码被静默遗漏。
         if self.manifest.exists() or self.path.exists():
             raise ValueError("Thread already exists; resume it or choose a new ID")
         if git(self.root, "status", "--porcelain", "--", ".", ":(exclude).forgecode"):
@@ -48,6 +49,7 @@ class Workspace:
         return metadata
 
     def export(self):
+        # diff 是补丁数据，不能 strip 尾部空白；untracked 文件另行生成添加补丁。
         patch = git(self.path, "--no-pager", "diff", "--binary", "--no-ext-diff", "--no-textconv", "HEAD", strip=False)
         from v0.tools import Tools
         guard = Tools(self.path)

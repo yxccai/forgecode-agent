@@ -11,6 +11,7 @@ class Memory(StoredMemory):
         self.root = Path(root).resolve()
 
     def recall(self, query, limit=5):
+        # 过滤而不是删除：时间、置信标签、来源哈希都通过才返回；仍不能证明结论正确。
         candidates = super().recall(query, limit=500)
         valid = []
         guard = Tools(self.root)

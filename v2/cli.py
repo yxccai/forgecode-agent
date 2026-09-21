@@ -60,6 +60,7 @@ def main(runtime_type=Runtime, tools_type=Tools, version="V2"):
                 if not previous.next:
                     raise ValueError("Thread already finished; start a new thread")
                 payload = None
+                # 恢复传 None，表示继续已有待执行节点，而不是重新追加原任务。
             else:
                 if previous.values:
                     raise ValueError("Thread already exists; use --resume")

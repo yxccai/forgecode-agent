@@ -27,6 +27,7 @@ def test_source(task, cases=None):
 
 
 def evaluate_source(task, source):
+    # 完整用例在 Agent 工作区之外运行，防止公开测试修改直接决定分数；不是安全沙箱。
     with tempfile.TemporaryDirectory(prefix="forgecode-oracle-") as root:
         Path(root, "subject.py").write_text(source)
         Path(root, "test_acceptance.py").write_text(test_source(task))
@@ -55,5 +56,6 @@ def evaluate_source(task, source):
         except SyntaxError:
             structural = False
         return {"passed": passed, "total": total, "structural": structural,
+                # 必须发现预期数量的用例且满足结构约束，不能把零测试当成功。
                 "success": passed == total and scores.get("tests") == total and structural,
                 "output": result["output"][:2000]}

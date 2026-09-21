@@ -30,6 +30,7 @@ class CommandArgs(BaseModel):
 
 
 def command(root, argv, timeout=30):
+    # 底层执行器没有审批：调用者必须先授权。argv 不经过 shell，但程序仍有用户权限。
     if not argv or any(not isinstance(arg, str) or "\x00" in arg for arg in argv):
         raise ValueError("Invalid argv")
     env = {k: v for k, v in os.environ.items()
@@ -37,6 +38,7 @@ def command(root, argv, timeout=30):
     # Rapid same-size edits can otherwise reuse timestamp-based Python bytecode.
     env["PYTHONDONTWRITEBYTECODE"] = "1"
     with tempfile.TemporaryFile() as output:
+        # 输出先落临时文件以限制内存占用；这不等于对磁盘输出设置了严格配额。
         process = subprocess.Popen(argv, cwd=root, env=env, stdin=subprocess.DEVNULL,
                                    stdout=output, stderr=subprocess.STDOUT, start_new_session=True)
         timed_out = False
@@ -62,6 +64,7 @@ class Tools(ReadTools):
         super().__init__(root)
         self.approve = approve
         self.items = [
+            # StructuredTool 将函数说明、参数校验和调用接口组合；不隐藏外层循环。
             StructuredTool.from_function(self.read_file, args_schema=ReadArgs),
             StructuredTool.from_function(self.search, args_schema=SearchArgs),
             StructuredTool.from_function(self.list_files),
@@ -97,6 +100,7 @@ class Tools(ReadTools):
                 raise ValueError("File too large")
             text = target.read_text(encoding="utf-8")
             if not old or text.count(old) != 1:
+                # 唯一匹配避免误改重复代码；内容漂移时应让模型重新读取而不是猜位置。
                 raise ValueError("old must match exactly once; read the file again")
             target.write_text(text.replace(old, new, 1), encoding="utf-8")
         return json.dumps({"edited": path})

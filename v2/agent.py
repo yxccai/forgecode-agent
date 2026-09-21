@@ -8,6 +8,7 @@ from v1.agent import SYSTEM, context
 
 
 class State(TypedDict, total=False):
+    # reducer 合并节点返回的消息增量；其它普通字段通常以新值覆盖。
     messages: Annotated[list[BaseMessage], add_messages]
     task: str
     root: str
@@ -35,10 +36,12 @@ class Runtime:
         self.model, self.tools, self.emit, self.planning = model, tools, emit, planning
 
     def budget(self, state):
+        # usage 在响应后才得知，所以 token 是软上限；工具次数在执行前逐次检查。
         return (state["steps"] >= state["max_steps"] or state["calls"] >= state["max_calls"] or
                 (state["max_tokens"] > 0 and state["tokens"] >= state["max_tokens"]))
 
     def plan(self, state):
+        # 计划是一次独立模型调用，也消耗 steps；不是免费或保证正确的隐藏推理。
         if not self.planning:
             return {"plan": ""}
         answer = self.model.complete([
@@ -67,6 +70,7 @@ class Runtime:
                 "status": "running" if answer.tool_calls else "answered"}
 
     def tools_node(self, state):
+        # 一个节点只执行一个工具，pending/cursor 让批量调用之间也有恢复边界。
         if state["calls"] >= state["max_calls"]:
             return {"status": "budget_exhausted"}
         call = state["pending"][state["cursor"]]
@@ -74,6 +78,7 @@ class Runtime:
         output = self.tools.execute(call["name"], call["args"])
         self.emit({"type": "tool_end", "name": call["name"], "output": output})
         return {"messages": [ToolMessage(content=output, tool_call_id=call["id"])],
+                # 只返回变化的字段，框架负责合并并持久化，不必返回整个 State。
                 "calls": state["calls"] + 1, "cursor": state["cursor"] + 1}
 
     def route_act(self, state):
@@ -90,6 +95,7 @@ class Runtime:
         return {}
 
     def build(self, saver, pause_after_tool=False):
+        # 图描述控制流；SqliteSaver 保存执行状态。工具副作用与 checkpoint 不是原子事务。
         graph = StateGraph(State)
         graph.add_node("plan", self.plan)
         graph.add_node("act", self.act)

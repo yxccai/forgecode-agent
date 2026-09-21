@@ -23,6 +23,7 @@ class Memory:
                          "note TEXT, sources TEXT, created REAL, confidence REAL)")
 
     def remember(self, note, sources, kind="semantic", confidence=0.5):
+        # 指纹用于之后校验来源变化，不证明笔记结论正确；confidence 也不是校准概率。
         if kind not in {"semantic", "episodic"} or not note.strip() or len(note) > 2000:
             raise ValueError("Invalid memory kind or note length")
         if not sources or len(sources) > 10:
@@ -40,6 +41,7 @@ class Memory:
             return cursor.lastrowid
 
     def recall(self, query, limit=5):
+        # V3 只做笔记词法检索，尚不校验指纹；新鲜度过滤由 V4 子类补上。
         with sqlite3.connect(self.db) as conn:
             rows = conn.execute("SELECT id,kind,note,sources,created,confidence FROM memories "
                                 "ORDER BY id DESC LIMIT 500").fetchall()

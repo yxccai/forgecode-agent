@@ -44,6 +44,7 @@ def list_sessions(saver, root):
     root = Path(root).resolve()
     seen, rows = set(), []
     for checkpoint in saver.list(None):
+        # Saver 按最新 checkpoint 优先返回；每个线程仅取第一次出现的快照。
         config = checkpoint.config["configurable"]
         thread = config["thread_id"]
         if config.get("checkpoint_ns") or thread in seen:

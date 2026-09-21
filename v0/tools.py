@@ -7,6 +7,7 @@ class Tools:
         self.root = Path(root).resolve()
 
     def path(self, name):
+        # 先规范化 .. 和符号链接，再判断目录包含关系；字符串前缀判断不可靠。
         path = (self.root / name).resolve()
         if not path.is_relative_to(self.root):
             raise ValueError("Path escapes repository")
@@ -29,6 +30,7 @@ class Tools:
 
     @property
     def schemas(self):
+        # Schema 是给模型看的接口声明；真正的路径与大小限制仍在 execute/path 中。
         specs = [
             ("read_file", "Read a UTF-8 file using 1-based start and at most 200 lines.",
              {"path": {"type": "string"}, "start": {"type": "integer", "minimum": 1}}, ["path"]),

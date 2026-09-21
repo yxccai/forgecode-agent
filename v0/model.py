@@ -42,6 +42,7 @@ class Model:
                             content.append(delta["content"])
                             emit({"type": "token", "text": delta["content"]})
                         for part in delta.get("tool_calls", []):
+                            # 参数是分片 JSON 字符串；按调用 index 拼完后，外层循环才解码并执行。
                             call = calls.setdefault(part["index"], {"id": "", "type": "function",
                                 "function": {"name": "", "arguments": ""}})
                             if part.get("id"):
@@ -49,6 +50,7 @@ class Model:
                             for key in ("name", "arguments"):
                                 call["function"][key] += part.get("function", {}).get(key, "")
             if not finished:
+                # 不能把网络截断时的半个工具请求当成合法完整响应。
                 raise RuntimeError("Incomplete SSE response (missing [DONE])")
         finally:
             emit({"type": "model_end"})

@@ -14,6 +14,7 @@ def context(messages, limit=60000):
     if sum(len(str(m.content)) + len(str(getattr(m, "tool_calls", []))) for m in messages) <= limit:
         return messages
     head = messages[:2]
+    # 工具调用和结果必须整组保留；这只是字符预算裁剪，不是摘要或精确 token 管理。
     groups, current = [], []
     for message in messages[2:]:
         if message.type == "ai" and current:
@@ -37,6 +38,7 @@ def run(task, model, tools, emit, max_steps=20):
     emit({"type": "task", "task": task})
     for step in range(max_steps):
         answer = model.complete(context(messages), tools.items, emit)
+        # context 只是模型输入视图，完整历史仍留在 messages 中。
         messages.append(answer)
         emit({"type": "decision", "step": step + 1, "tool_calls": answer.tool_calls,
               "content": answer.content})

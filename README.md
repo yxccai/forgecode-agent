@@ -3,6 +3,12 @@
 用于学习 Agent 原理与面试演示的终端 Coding Agent。按 `PROJECT_PLAN.md` 逐版开发，源码保留在 `v0/` 到 `v5/`。
 学习路线见 [docs/learning.md](docs/learning.md)，协议/工具/状态与终端渲染分开实现。
 
+完整文档：
+
+- [使用说明书：安装、配置、交互、历史、隔离、评测和排错](docs/USER_MANUAL.md)
+- [零基础源码课程总入口](docs/tutorials/README.md)
+- 分版精读：[V0](docs/tutorials/V0.md) · [V1](docs/tutorials/V1.md) · [V2](docs/tutorials/V2.md) · [V3](docs/tutorials/V3.md) · [V4](docs/tutorials/V4.md) · [V5](docs/tutorials/V5.md)
+
 当前开发到 **V5 / v1.0**；每版的验证记录见 `docs/vN.md`，评测结果见 `docs/evaluation-v5.md`。
 
 ## 安装与运行
@@ -55,7 +61,7 @@ forgecode --repo /path/to/clean/repo --verify 'python3 -m unittest discover' '�
 推理强度原样传给接口，例如 `low`、`medium`、`high`，具体支持值取决于提供商。
 不设置则不发送该字段。Key 使用环境变量或被 Git 忽略的本地 JSON 配置，避免写入命令历史。
 `--config config.local.json` 可读取 `base_url`、`api_key`、`model`、`reasoning_effort`。
-优先级为命令行 > 环境变量 > 配置文件 > 默认值。
+单次 CLI 的优先级为命令行 > 环境变量 > 配置文件 > 默认值；交互 `forge` 选定 JSON 中的字段优先于环境变量。
 
 终端等待动画表示正在等待模型，不伪造或展示隐藏思维链。正文逐片流式输出。
 `forgecode/ui.py` 负责显示；`v0/agent.py` 只产生事件，不依赖 UI。

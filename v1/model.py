@@ -15,8 +15,10 @@ class Model:
         total = None
         try:
             client = self.client.bind_tools(tools) if tools else self.client
+            # bind_tools 只传声明，不执行函数；本地执行仍由自己的 Agent 循环负责。
             for chunk in client.stream(messages):
                 total = chunk if total is None else total + chunk
+                # 展示用 delta 立即发出，协议历史则保存合并后的完整消息。
                 if isinstance(chunk.content, str) and chunk.content:
                     emit({"type": "token", "text": chunk.content})
             if total is None:

@@ -47,10 +47,12 @@ class Session:
             payload = initial(text, str(self.root), verify, max_steps=self.max_steps,
                               verification=bool(verify))
             if snapshot.values:
+                # 新轮只追加用户消息；add_messages 保留旧历史，其它预算字段由 initial 重置。
                 payload["messages"] = [HumanMessage(text)]
         while True:
             pending = [item for task in self.snapshot().tasks for item in task.interrupts]
             if pending:
+                # UI 只返回批准/拒绝，恢复位置由图的持久化中断记录决定。
                 payload = Command(resume=approve(pending[0].value))
             result = self.graph.invoke(payload, self.options)
             if not result.get("__interrupt__"):

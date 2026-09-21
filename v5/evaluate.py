@@ -39,6 +39,7 @@ def create_fixture(root, task):
 
 
 def run_one(task, variant, config, out, repeat=0):
+    # 每个 task/variant/repeat 都有全新仓库，避免代码修改跨实验组污染。
     flags = {"planning": True, "repo_context": True, "verification": True, "memory": True,
              **VARIANTS[variant]}
     identity = f"{task.id}-{variant}-{repeat}"
@@ -62,6 +63,7 @@ def run_one(task, variant, config, out, repeat=0):
                 prompt = task.instruction + " Change subject.py only. Inspect source before editing. "
                 prompt += "Do not change test_public.py. Finish with a concise summary."
                 prompt += " Run python3 -m unittest discover to verify."
+                # 消融只改机制，任务提示保持一致；否则无法区分提示差异与机制收益。
                 state = initial(prompt, str(workspace.path), verify, max_steps=12, max_calls=30,
                                 max_repairs=2, verification=flags["verification"])
                 opts = {"configurable": {"thread_id": identity}, "recursion_limit": 200}
@@ -112,6 +114,7 @@ def summarize(rows):
         report[variant]["failures"] = {kind: sum(r["failure"] == kind for r in sample)
                                        for kind in sorted({r["failure"] for r in sample if r["failure"]})}
         pairs = [(r, base) for r in sample for base in rows if base["variant"] == "full"
+                 # 必须按相同任务和重复序号配对，不能直接比较 20 项与 5 项总均值。
                  and base["task"] == r["task"] and base["repeat"] == r["repeat"]]
         if variant != "full" and pairs:
             report[variant]["paired"] = {"n": len(pairs),
@@ -161,6 +164,7 @@ def main():
     results = out / "results.jsonl"
     rows = [json.loads(line) for line in results.read_text().splitlines()] if results.exists() else []
     done = {(r["task"], r["variant"], r["repeat"]) for r in rows}
+    # 断点续跑跳过所有已记录项（包括失败）；有意重试应使用新的实验输出目录。
     jobs = [j for j in jobs if (j[0].id, j[1], j[2]) not in done]
     random.Random(42).shuffle(jobs)
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
