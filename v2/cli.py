@@ -13,11 +13,11 @@ from v1.tools import Tools
 from v2.agent import Runtime, initial
 
 
-def main():
+def main(runtime_type=Runtime, tools_type=Tools, version="V2"):
     if len(sys.argv) > 1 and sys.argv[1] == "configure":
         configure(sys.argv[2] if len(sys.argv) > 2 else "config.local.json")
         return
-    parser = argparse.ArgumentParser(description="ForgeCode V2: persistent coding agent")
+    parser = argparse.ArgumentParser(description=f"ForgeCode {version}: persistent coding agent")
     parser.add_argument("task", nargs="?")
     parser.add_argument("--repo", default=".")
     parser.add_argument("--thread", default=None)
@@ -50,7 +50,7 @@ def main():
             ui.close()
             return input(f"Execute {shlex.join(argv)}? [y/N] ").strip().lower() == "y"
         with SqliteSaver.from_conn_string(str(data / "state.sqlite")) as saver:
-            runtime = Runtime(Model(config), Tools(root, approve), trace, not args.no_planning)
+            runtime = runtime_type(Model(config), tools_type(root, approve), trace, not args.no_planning)
             graph = runtime.build(saver, args.pause_after_tool)
             options = {"configurable": {"thread_id": thread}, "recursion_limit": 1000}
             previous = graph.get_state(options)
