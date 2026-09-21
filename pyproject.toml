@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "forgecode-agent"
+version = "0.0.0"
+description = "A small, observable repository coding agent"
+requires-python = ">=3.10"
+dependencies = ["rich>=13,<15"]
+
+[project.scripts]
+forgecode = "v0.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["forgecode*", "v0*"]
