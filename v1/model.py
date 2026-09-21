@@ -14,7 +14,8 @@ class Model:
         emit({"type": "model_start"})
         total = None
         try:
-            for chunk in self.client.bind_tools(tools).stream(messages):
+            client = self.client.bind_tools(tools) if tools else self.client
+            for chunk in client.stream(messages):
                 total = chunk if total is None else total + chunk
                 if isinstance(chunk.content, str) and chunk.content:
                     emit({"type": "token", "text": chunk.content})

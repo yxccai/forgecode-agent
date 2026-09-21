@@ -4,13 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "forgecode-agent"
-version = "0.1.0"
+version = "0.2.0"
 description = "A small, observable repository coding agent"
 requires-python = ">=3.10"
-dependencies = ["rich>=13,<15", "langchain-openai>=0.3,<2", "langchain-core>=0.3,<2"]
+dependencies = ["rich>=13,<15", "langchain-openai>=0.3,<2", "langchain-core>=0.3,<2",
+                "langgraph>=1,<2", "langgraph-checkpoint-sqlite>=3,<4"]
 
 [project.scripts]
-forgecode = "v1.cli:main"
+forgecode = "v2.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["forgecode*", "v0*", "v1*"]
+include = ["forgecode*", "v0*", "v1*", "v2*"]

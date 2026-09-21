@@ -2,7 +2,7 @@
 
 用于学习 Agent 原理与面试演示的终端 Coding Agent。按 `PROJECT_PLAN.md` 逐版开发，源码保留在 `v0/` 到 `v5/`。
 
-当前开发到 **V1**；每版的验证记录见 `docs/vN.md`。
+当前开发到 **V2**；每版的验证记录见 `docs/vN.md`。
 
 ## 安装与运行
 
@@ -38,8 +38,11 @@ forgecode --repo . '解释 Agent 循环，并引用源码位置'
 4. `forgecode/trace.py` 与 `forgecode/ui.py`：同一事件分别用于记录和渲染。
 5. `v1/agent.py`、`v1/tools.py`：LangChain 消息、精确编辑、命令确认与测试反馈。
 
-最新 `forgecode` 入口运行 V1；只读 V0 可用 `python -m v0.cli`。
-V1 会直接修改 `--repo` 指定目录，运行命令前逐次询问确认。
+6. `v2/agent.py`：LangGraph 节点、State、预算、SQLite checkpoint 与恢复。
+
+最新 `forgecode` 入口运行 V2；此前版本可用 `python -m v0.cli` 或 `python -m v1.cli`。
+V1/V2 会直接修改 `--repo` 指定目录，运行命令前逐次询问确认。
+V2 可用 `--thread demo --pause-after-tool` 在工具后暂停，再用 `--thread demo --resume` 恢复。
 
 ## 验证
 
