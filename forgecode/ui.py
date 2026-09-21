@@ -1,5 +1,7 @@
 """Presentation consumes events; agent cores never import Rich."""
 from rich.console import Console
+from rich.live import Live
+from rich.markdown import Markdown
 
 
 class Terminal:
@@ -7,16 +9,29 @@ class Terminal:
         self.console = Console()
         self.status = None
         self.streaming = False
+        self.live = None
+        self.text = ""
 
     def __call__(self, event):
         kind = event["type"]
         if kind == "model_start":
             self.close()
+            self.text = ""
             self.status = self.console.status("[cyan]Thinking...", spinner="dots")
             self.status.start()
         elif kind == "token":
-            self.close()
-            self.console.print(event["text"], end="", markup=False, highlight=False)
+            if self.status:
+                self.status.stop()
+                self.status = None
+            self.text += event["text"]
+            if self.console.is_terminal:
+                if self.live is None:
+                    self.live = Live(console=self.console, refresh_per_second=12,
+                                     vertical_overflow="visible")
+                    self.live.start()
+                self.live.update(Markdown(self.text))
+            else:
+                self.console.print(event["text"], end="", markup=False, highlight=False)
             self.streaming = True
         elif kind == "model_end":
             self.close()
@@ -32,6 +47,9 @@ class Terminal:
             self.console.print(event["message"], style="red", markup=False)
 
     def close(self):
+        if self.live:
+            self.live.stop()
+            self.live = None
         if self.status:
             self.status.stop()
             self.status = None
