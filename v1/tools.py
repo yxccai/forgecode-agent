@@ -34,6 +34,8 @@ def command(root, argv, timeout=30):
         raise ValueError("Invalid argv")
     env = {k: v for k, v in os.environ.items()
            if not any(word in k.upper() for word in ("KEY", "TOKEN", "SECRET", "PASSWORD"))}
+    # Rapid same-size edits can otherwise reuse timestamp-based Python bytecode.
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
     with tempfile.TemporaryFile() as output:
         process = subprocess.Popen(argv, cwd=root, env=env, stdin=subprocess.DEVNULL,
                                    stdout=output, stderr=subprocess.STDOUT, start_new_session=True)

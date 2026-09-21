@@ -2,7 +2,7 @@
 
 用于学习 Agent 原理与面试演示的终端 Coding Agent。按 `PROJECT_PLAN.md` 逐版开发，源码保留在 `v0/` 到 `v5/`。
 
-当前开发到 **V3**；每版的验证记录见 `docs/vN.md`。
+当前开发到 **V4**；每版的验证记录见 `docs/vN.md`。
 
 ## 安装与运行
 
@@ -13,7 +13,8 @@ pip install -e .
 export OPENAI_BASE_URL=https://your-provider.example/v1
 export OPENAI_API_KEY=your-key
 export OPENAI_MODEL=your-model
-forgecode --repo . '解释 Agent 循环，并引用源码位置'
+python -m v0.cli --repo . '解释 Agent 循环，并引用源码位置'
+forgecode --repo /path/to/clean/repo --verify 'python3 -m unittest discover' '修复测试失败'
 ```
 
 支持 `--base-url`、`--model`、`--reasoning-effort`、`--max-steps`，每次运行可切换。
@@ -42,7 +43,10 @@ forgecode --repo . '解释 Agent 循环，并引用源码位置'
 
 7. `v3/repository.py`、`v3/memory.py`：符号检索、上下文排序与来源可追踪的跨任务记忆。
 
-最新 `forgecode` 入口运行 V3；此前版本可用 `python -m v0.cli`、`python -m v1.cli` 或 `python -m v2.cli`。
+8. `v4/agent.py`、`v4/workspace.py`：审批中断、验证修复循环和 worktree 隔离。
+
+最新 `forgecode` 入口运行 V4；此前版本可用 `python -m v0.cli` 到 `python -m v3.cli`。
+V4 要求干净 Git 仓库与明确的 `--verify` 命令，修改留在独立 worktree 中，详见 `docs/v4.md`。
 V1-V3 会直接修改 `--repo` 指定目录，运行命令前逐次询问确认。
 V2/V3 可用 `--thread demo --pause-after-tool` 在工具后暂停，再用 `--thread demo --resume` 恢复。
 
