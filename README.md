@@ -22,11 +22,15 @@ forge
 直接输入自然语言连续对话。`/verify python3 -m unittest discover -s tests` 设置可信测试命令，
 `/new` 新建对话，`/resume` 继续中断任务，`/exit` 退出。
 重新打开会话使用 `forge --session 启动时显示的ID`。
+也可用 `forge --sessions` 启动历史会话选择界面。会话内 `/sessions` 列出当前目录的历史，
+按编号恢复；`/history` 分页回看消息，`/history all` 同时显示工具调用与运行时观察。
+恢复时自动显示最近 8 条对话，中断的任务仍需 `/resume` 明确继续，浏览历史不调用模型。
 交互模式直接操作当前目录，每次编辑和模型请求的命令均询问确认；未设置验证命令时不宣称 verified。
 单次任务 `forgecode` 则继续使用隔离 worktree。
 
 界面分层：`forgecode/interactive.py` 管输入与命令，`forgecode/menus.py` 管设置菜单，
 `forgecode/ui.py` 管渲染，`forgecode/session.py` 只适配多轮状态与编辑审批；
+`forgecode/history.py` 独立负责历史记录读取、列表和分页展示，不修改核心状态图；
 学习 Agent 原理仍按 `v0/` 到 `v5/` 阅读，不必先看菜单代码。
 
 ```bash

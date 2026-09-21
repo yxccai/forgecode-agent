@@ -10,6 +10,7 @@ from uuid import uuid4
 from langgraph.checkpoint.sqlite import SqliteSaver
 from forgecode.config import Config
 from forgecode.menus import api_menu, pick_effort, pick_model, save
+from forgecode.history import list_sessions, select_session, show_history
 from forgecode.session import Session
 from forgecode.trace import Trace
 from forgecode.ui import Terminal
@@ -26,6 +27,8 @@ HELP = """/model [NAME]    Select or enter a model
 /verify COMMAND  Set trusted test command; 'off' disables automatic verification
 /status          Show session and model, never the key
 /resume          Continue an interrupted turn
+/sessions        Browse and reopen saved conversations in this directory
+/history [all]   Read messages; 'all' also includes tools and runtime observations
 /new             Start a fresh conversation
 /exit            Exit
 """
@@ -64,6 +67,7 @@ def main():
     parser.add_argument("--config")
     parser.add_argument("--windows-env", action="store_true")
     parser.add_argument("--session", help="Reopen a saved conversation ID")
+    parser.add_argument("--sessions", action="store_true", help="Choose a saved conversation at startup")
     args = parser.parse_args()
     root = Path(args.repo).resolve()
     if not root.is_dir():
@@ -76,6 +80,12 @@ def main():
         profile = Path(args.config) if args.config else data / "config.local.json"
         config = load_config(str(profile) if profile.exists() or args.config else None, args.windows_env)
         with SqliteSaver.from_conn_string(str(data / "interactive.sqlite")) as saver:
+            if args.sessions:
+                selected = select_session(ui.console, list_sessions(saver, root), thread)
+                if selected:
+                    thread = selected
+            if args.session and not saver.get_tuple({"configurable": {"thread_id": thread}}):
+                raise ValueError("Saved session not found; use forge --sessions")
             def open_session():
                 return Session(root, thread, saver, None,
                                Trace(data / "traces" / f"interactive-{thread}.jsonl", ui), config.max_steps)
@@ -85,6 +95,10 @@ def main():
             ui.console.print("ForgeCode", style="bold cyan")
             ui.console.print(f"{root}\nModel: {config.model or 'not configured'} | Session: {thread}", markup=False)
             ui.console.print("Edits affect this directory and require approval. /help for commands.", style="dim")
+            if session.snapshot().values:
+                show_history(ui.console, session.snapshot().values.get("messages", []), recent=True)
+                if session.snapshot().next:
+                    ui.console.print("This conversation has an interrupted turn. /resume to continue.", style="yellow")
 
             def approve(request):
                 ui.close()
@@ -106,6 +120,21 @@ def main():
                         ui.console.print(f"Session: {thread}\nModel: {config.model}\n"
                                          f"Effort: {config.reasoning_effort or 'default'}\n"
                                          f"Verify: {shlex.join(verify) or 'off'}", markup=False)
+                    elif command == "/history":
+                        if value not in {"", "all"}:
+                            raise ValueError("Use /history or /history all")
+                        show_history(ui.console, session.snapshot().values.get("messages", []), value == "all")
+                    elif command == "/sessions":
+                        selected = select_session(ui.console, list_sessions(saver, root), thread)
+                        if selected:
+                            thread = selected
+                            session = open_session()
+                            snapshot = session.snapshot()
+                            verify = snapshot.values.get("verify_argv", [])
+                            ui.console.print(f"Session: {thread}", markup=False)
+                            show_history(ui.console, snapshot.values.get("messages", []), recent=True)
+                            if snapshot.next:
+                                ui.console.print("Interrupted turn: use /resume.", style="yellow")
                     elif command == "/new":
                         thread = uuid4().hex[:12]
                         session = open_session()
