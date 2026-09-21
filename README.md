@@ -7,6 +7,28 @@
 
 ## 安装与运行
 
+已安装后，进入项目并启动交互会话：
+
+```bash
+source .venv/bin/activate
+forge
+```
+
+无需预先配置 API。进入后输入 `/api` 打开接口设置菜单，配置 URL、密钥、模型和推理强度；
+`/model` 打开模型选择（提供商支持 `/models` 时加载列表，也可手输），`/effort` 打开强度选择。
+菜单使用编号选择，`/save` 保存当前配置；默认文件 `.forgecode/config.local.json` 不进入 Git。
+已有 Windows 环境变量会在无本地配置时自动尝试读取。
+
+直接输入自然语言连续对话。`/verify python3 -m unittest discover -s tests` 设置可信测试命令，
+`/new` 新建对话，`/resume` 继续中断任务，`/exit` 退出。
+重新打开会话使用 `forge --session 启动时显示的ID`。
+交互模式直接操作当前目录，每次编辑和模型请求的命令均询问确认；未设置验证命令时不宣称 verified。
+单次任务 `forgecode` 则继续使用隔离 worktree。
+
+界面分层：`forgecode/interactive.py` 管输入与命令，`forgecode/menus.py` 管设置菜单，
+`forgecode/ui.py` 管渲染，`forgecode/session.py` 只适配多轮状态与编辑审批；
+学习 Agent 原理仍按 `v0/` 到 `v5/` 阅读，不必先看菜单代码。
+
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate

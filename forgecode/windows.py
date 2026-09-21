@@ -16,7 +16,7 @@ def windows_environment():
     $result | ConvertTo-Json -Compress
     """
     result = subprocess.run(["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", script],
-                            capture_output=True, check=True, timeout=30)
+                            stdin=subprocess.DEVNULL, capture_output=True, check=True, timeout=30)
     values = json.loads(result.stdout.decode("utf-8-sig"))
     names = ("FORGECODE_API_KEY", "FORGECODE_BASE_URL", "FORGECODE_MODEL")
     if not all(isinstance(values.get(name), str) and values[name] for name in names):
